@@ -35,10 +35,10 @@ const scene = new THREE.Scene()
  */
 
 const inputData = [
-    {key: "A", value: 10},
+    {key: "A", value: 2},
     {key: "B", value: 3},
     {key: "C", value: 5},
-    {key: "D", value: 20}
+    {key: "D", value: 3}
 ]
 
 // Transform data
@@ -61,10 +61,21 @@ const color = new d3.scaleOrdinal()
  * Objects
  */
 
+// Normalization: We use this functions to map the indices of our data to a number 
+// between 0 and 1 to use this as a scalar for our meshes size and position
+const clamp = (a, min = 0, max = 1) => Math.min(max, Math.max(min, a))
+const invlerp = (x, y, a) => clamp((a - x) / (y - x))
+
 const createDataMesh = (d, i) => {
-    const geometry = new THREE.BoxGeometry(1*i/10, 1*i/10, 1*i/10, 4, 4, 4)
+    const scalar = invlerp(0, data.length, i)
+    const geometry = new THREE.BoxGeometry(1, 1, 1, 2, 2, 2)
     const material = new THREE.MeshBasicMaterial({ color: new THREE.Color(color(d)) , wireframe: config.wireframe})
     const mesh = new THREE.Mesh(geometry, material)
+    mesh.position.x = scalar
+    mesh.position.y = scalar
+    mesh.position.z = scalar
+
+
     return mesh
 }
 
@@ -108,9 +119,9 @@ window.addEventListener('resize', () =>
 
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.x = 1
-camera.position.y = 1
-camera.position.z = 1
+camera.position.x = 3
+camera.position.y = 3
+camera.position.z = 3
 scene.add(camera)
 
 // Controls
