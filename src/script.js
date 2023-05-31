@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'lil-gui'
+import * as d3 from 'd3'
 
 /**
  * Base
@@ -8,7 +9,8 @@ import * as dat from 'lil-gui'
 
 // Parameters
 const config = {
-    materialColor: '#9b5de5' // #00f5d4 #e9eaf2 #5db5f9 #232d34 #9b5de5
+    materialColor: '#9b5de5', // #00f5d4 #e9eaf2 #5db5f9 #232d34 #9b5de5
+    wireframe: true
 }
 
 // Debug
@@ -19,6 +21,8 @@ gui
     {
         material.color.set(config.materialColor)
     })
+gui.add(config, 'wireframe')
+.onChange(() => dataMeshes.forEach(m => m.material.wireframe = config.wireframe))
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
@@ -47,12 +51,21 @@ inputData.forEach(d => {
 })
 
 /**
+ * Scales
+ */
+const color = new d3.scaleOrdinal()
+    .domain([new Set(data)])
+    .range(["9b5de5","e9eaf2","5db5f9","00f5d4"])
+
+/**
  * Objects
  */
 
 const createDataMesh = (d, i) => {
-    const geometry = new THREE.BoxGeometry(1, 1, 1*i, 4, 4, 4)
-    const material = new THREE.MeshBasicMaterial({ color: config.materialColor , wireframe: true})
+    const meshColor = new THREE.Color(color(d))
+    meshColor.lerp(new THREE.Color('#9b5de5'), 0.5)
+    const geometry = new THREE.BoxGeometry(1*i/10, 1*i/10, 1*i/10, 4, 4, 4)
+    const material = new THREE.MeshBasicMaterial({ color: meshColor , wireframe: config.wireframe})
     const mesh = new THREE.Mesh(geometry, material)
     return mesh
 }
