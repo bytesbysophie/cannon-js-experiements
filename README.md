@@ -1,3 +1,16 @@
-# Cannon.js experiments
+# Three.js x Cannon.js Playground
 
-A playground for testing and exploring ways to use three.js with [cannon.js](https://schteppe.github.io/cannon.js/) for creating captivating data art
+## Setup
+Download [Node.js](https://nodejs.org/en/download/).
+Run this followed commands:
+
+``` bash
+# Install dependencies (only the first time)
+npm install
+
+# Run the local server at localhost:5173
+npm run dev
+
+# Build for production in the dist/ directory
+npm run build
+```
