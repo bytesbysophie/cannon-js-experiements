@@ -15,7 +15,7 @@ const config = {
 }
 
 // Debug
-const gui = new dat.GUI()
+// const gui = new dat.GUI()
 // gui
 //     .addColor(config, 'color1')
 //     .onChange(() =>
@@ -37,7 +37,7 @@ const scene = new THREE.Scene()
 
 const inputData = [
     {key: "A", value: 90},
-    {key: "B", value: 30},
+    {key: "B", value: 80},
     {key: "C", value: 100},
     {key: "D", value: 120}
 ]
@@ -64,8 +64,8 @@ const color = new d3.scaleOrdinal()
 const world = new CANNON.World()
 world.broadphase = new CANNON.SAPBroadphase(world)
 world.allowSleep = true
-// world.gravity.set(0, - 5, 0)
-world.gravity.set(0, - 9.82, 0)
+world.gravity.set(0, -4, 0)
+// world.gravity.set(0, - 9.82, 0)
 
 // Default material
 const defaultMaterial = new CANNON.Material('default')
@@ -210,7 +210,7 @@ camera.position.y = 10
 camera.position.z = 60
 scene.add(camera)
 
-scene.position.y = -10
+scene.position.y = -15
 // Controls
 const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
@@ -233,6 +233,7 @@ renderer.setClearColor( 0x000000, 0 )
  */
 const clock = new THREE.Clock()
 let oldElapsedTime = 0
+console.log(world.gravity)
 
 const tick = () =>
 {
@@ -242,7 +243,10 @@ const tick = () =>
 
     // Update physics
     world.step(1 / 60, deltaTime, 3)
-    
+    // while(world.gravity.y > -9) {
+    //     world.gravity.set(0, world.gravity.y - 1 , 0)
+    // }
+
     for(const object of objectsToUpdate)
     {
         object.mesh.position.copy(object.body.position)
@@ -259,4 +263,5 @@ const tick = () =>
     window.requestAnimationFrame(tick)
 }
 
-tick()
+renderer.render(scene, camera)
+setTimeout(tick, 1000)
