@@ -55,17 +55,15 @@ inputData.forEach(d => {
  */
 const color = new d3.scaleOrdinal()
     .domain([new Set(data)])
-    .range(["9b5de5","e9eaf2","5db5f9","00f5d4"])
+    .range(["#9b5de5","#e9eaf2","#5db5f9","#00f5d4"])
 
 /**
  * Objects
  */
 
 const createDataMesh = (d, i) => {
-    const meshColor = new THREE.Color(color(d))
-    meshColor.lerp(new THREE.Color('#9b5de5'), 0.5)
     const geometry = new THREE.BoxGeometry(1*i/10, 1*i/10, 1*i/10, 4, 4, 4)
-    const material = new THREE.MeshBasicMaterial({ color: meshColor , wireframe: config.wireframe})
+    const material = new THREE.MeshBasicMaterial({ color: new THREE.Color(color(d)) , wireframe: config.wireframe})
     const mesh = new THREE.Mesh(geometry, material)
     return mesh
 }
