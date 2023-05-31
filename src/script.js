@@ -50,10 +50,22 @@ inputData.forEach(d => {
  * Objects
  */
 
-const geometry = new THREE.BoxGeometry(1, 1, 1, 4, 4, 4)
-const material = new THREE.MeshBasicMaterial({ color: config.materialColor , wireframe: true})
-const mesh = new THREE.Mesh(geometry, material)
-scene.add(mesh)
+const createDataMesh = (d, i) => {
+    const geometry = new THREE.BoxGeometry(1, 1, 1*i, 4, 4, 4)
+    const material = new THREE.MeshBasicMaterial({ color: config.materialColor , wireframe: true})
+    const mesh = new THREE.Mesh(geometry, material)
+    return mesh
+}
+
+const dataMeshGroup = new THREE.Group();
+const dataMeshes = []
+data.forEach((d, i) => {
+    let mesh = createDataMesh(d, i)
+    dataMeshes.push(mesh)
+    dataMeshGroup.add(mesh)
+})
+scene.add(dataMeshGroup)
+console.log(dataMeshes)
 
 /**
  * Sizes
