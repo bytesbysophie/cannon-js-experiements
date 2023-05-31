@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'lil-gui'
 import * as d3 from 'd3'
+import * as CANNON from 'cannon-es'
 
 /**
  * Base
@@ -58,6 +59,35 @@ const color = new d3.scaleOrdinal()
     .range(["#9b5de5","#e9eaf2","#5db5f9","#00f5d4"])
 
 /**
+ * Physics
+ */
+const world = new CANNON.World()
+world.broadphase = new CANNON.SAPBroadphase(world)
+world.allowSleep = true
+world.gravity.set(0, - 1, 0)
+// world.gravity.set(0, - 9.82, 0)
+
+// Default material
+const defaultMaterial = new CANNON.Material('default')
+const defaultContactMaterial = new CANNON.ContactMaterial(
+    defaultMaterial,
+    defaultMaterial,
+    {
+        friction: 0.1,
+        restitution: 0.7
+    }
+)
+world.defaultContactMaterial = defaultContactMaterial
+
+// Floor
+const floorShape = new CANNON.Plane()
+const floorBody = new CANNON.Body()
+floorBody.mass = 0
+floorBody.addShape(floorShape)
+floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(- 1, 0, 0), Math.PI * 0.5)  // rotate because the plane is also rotated
+world.addBody(floorBody)
+
+/**
  * Objects
  */
 
@@ -67,16 +97,14 @@ const clamp = (a, min = 0, max = 1) => Math.min(max, Math.max(min, a))
 const invlerp = (x, y, a) => clamp((a - x) / (y - x))
 
 const createDataMesh = (d, i) => {
-    const scalar = invlerp(0, data.length, i)
+    // const scalar = invlerp(0, data.length, i)
     const geometry = new THREE.BoxGeometry(1, 1, 1, 2, 2, 2)
     const material = new THREE.MeshBasicMaterial({ color: new THREE.Color(color(d)) , wireframe: config.wireframe})
     const mesh = new THREE.Mesh(geometry, material)
     const positionFactor = 5
     mesh.position.x = Math.random() * positionFactor
-    mesh.position.y = Math.random() * positionFactor
+    mesh.position.y = Math.random() * positionFactor * 2 
     mesh.position.z = Math.random() * positionFactor
-
-
     return mesh
 }
 
