@@ -27,6 +27,26 @@ const canvas = document.querySelector('canvas.webgl')
 const scene = new THREE.Scene()
 
 /**
+ * Data
+ */
+
+const inputData = [
+    {key: "A", value: 10},
+    {key: "B", value: 3},
+    {key: "C", value: 5},
+    {key: "D", value: 20}
+]
+
+// Transform data
+const data = []
+inputData.forEach(d => {
+    console.log(d.value)
+    for(let i = 0; i < d.value; i++){
+        data.push(d.key)
+    }
+})
+
+/**
  * Objects
  */
 
