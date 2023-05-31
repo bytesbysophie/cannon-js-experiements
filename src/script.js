@@ -96,11 +96,14 @@ world.addBody(floorBody)
 const clamp = (a, min = 0, max = 1) => Math.min(max, Math.max(min, a))
 const invlerp = (x, y, a) => clamp((a - x) / (y - x))
 
+const geometry = new THREE.BoxGeometry(1, 1, 1, 2, 2, 2)
+const material = new THREE.MeshBasicMaterial({wireframe: config.wireframe})
+
 const createDataMesh = (d, i) => {
     // const scalar = invlerp(0, data.length, i)
-    const geometry = new THREE.BoxGeometry(1, 1, 1, 2, 2, 2)
-    const material = new THREE.MeshBasicMaterial({ color: new THREE.Color(color(d)) , wireframe: config.wireframe})
-    const mesh = new THREE.Mesh(geometry, material)
+    const mesh = new THREE.Mesh(geometry, material.clone())
+    mesh.material.color = new THREE.Color(color(d))
+    console.log(color(d))
     const positionFactor = 5
     mesh.position.x = Math.random() * positionFactor
     mesh.position.y = Math.random() * positionFactor * 2 
