@@ -71,9 +71,10 @@ const createDataMesh = (d, i) => {
     const geometry = new THREE.BoxGeometry(1, 1, 1, 2, 2, 2)
     const material = new THREE.MeshBasicMaterial({ color: new THREE.Color(color(d)) , wireframe: config.wireframe})
     const mesh = new THREE.Mesh(geometry, material)
-    mesh.position.x = scalar
-    mesh.position.y = scalar
-    mesh.position.z = scalar
+    const positionFactor = 5
+    mesh.position.x = Math.random() * positionFactor
+    mesh.position.y = Math.random() * positionFactor
+    mesh.position.z = Math.random() * positionFactor
 
 
     return mesh
@@ -119,9 +120,9 @@ window.addEventListener('resize', () =>
 
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.x = 3
-camera.position.y = 3
-camera.position.z = 3
+camera.position.x = 10
+camera.position.y = 10
+camera.position.z = 10
 scene.add(camera)
 
 // Controls
