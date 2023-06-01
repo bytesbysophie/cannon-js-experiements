@@ -16,7 +16,8 @@ const config = {
     updateScene,
     positionFactor: 10,
     objectDistance: 1,
-    endPointDistance: 30
+    endPointDistance: 30,
+    objectDensity: 5
 
 }
 
@@ -25,8 +26,9 @@ const gui = new dat.GUI()
 gui.add(config, 'wireframe')
     .onChange(() => dataMeshes.forEach(m => m.material.wireframe = config.wireframe))
 // gui.add(config, 'positionFactor', 0, 30) // only applied at next scene update
-gui.add(config, 'objectDistance', 0, 20).onChange(() => {updateObjectConstraints()})
-gui.add(config, 'endPointDistance', 0, 100).onChange(() => {updateEndpointConstraint()})
+gui.add(config, 'objectDistance', 0, 20, 1).onChange(() => {updateObjectConstraints()})
+gui.add(config, 'objectDensity', 0, 10, 1).onChange(() => {updateConstraints()})
+gui.add(config, 'endPointDistance', 0, 100, 1).onChange(() => {updateEndpointConstraint()})
 gui.add( config, 'constraintType' , ['distance', 'hinge', 'none']).onChange(() => {updateConstraints()})
 gui.add( config, 'updateScene' ); // Button
 
@@ -214,9 +216,9 @@ const addObjectConstraints = () => {
             var obecjtB = objectsToUpdate[i+1];
             objectsConstraints.push(constrainTwoObjects(object, obecjtB, config.objectDistance)) 
         }
-        let n = 4
-        if(i+n <= objectsToUpdate.length - 1) {
-            obecjtB = objectsToUpdate[i+n];
+
+        if(i+config.objectDensity <= objectsToUpdate.length - 1) {
+            obecjtB = objectsToUpdate[i+config.objectDensity];
             objectsConstraints.push(constrainTwoObjects(object, obecjtB, config.objectDistance)) 
         }
 
