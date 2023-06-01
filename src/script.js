@@ -11,7 +11,8 @@ import * as CANNON from 'cannon-es'
 // Parameters
 const config = {
     color1: '#232d34', // #00f5d4 #e9eaf2 #5db5f9 #232d34 #9b5de5
-    wireframe: false
+    wireframe: false,
+    constraintType: 'distance' // 'distance' 'hinge'
 
 }
 
@@ -37,10 +38,10 @@ const scene = new THREE.Scene()
  */
 
 const inputData = [
-    {key: "A", value: 12},
-    {key: "B", value: 10},
+    {key: "A", value: 22},
+    {key: "B", value: 30},
     {key: "C", value: 20},
-    {key: "D", value: 10}
+    {key: "D", value: 40}
 ]
 
 // Transform data
@@ -152,32 +153,40 @@ scene.add(dataMeshGroup)
 /**
  * Constraints
  */
-const maxDistance = 1
+const maxDistance = 2
+
+const addConstraint = (objectA, obecjtB, maxDistance) => {
+    // Create the constraint based on the selected type
+    if (config.constraintType === 'distance') {
+        // Create a distance constraint
+        // const distance = maxDistance * Math.random(); // Adjust the maximum distance as needed
+        const distance = maxDistance; // Adjust the maximum distance as needed
+        const constraint = new CANNON.DistanceConstraint(objectA.body, obecjtB.body, distance);
+        world.addConstraint(constraint);
+    } else if (config.constraintType === 'hinge') {
+        // Create a hinge constraint
+        const constraint = new CANNON.HingeConstraint(objectA.body, obecjtB.body);
+        world.addConstraint(constraint);
+    }
+}
+
 // Create random constraints
 objectsToUpdate.forEach((object, i) => {
 
     if(i !== objectsToUpdate.length - 1) {
         // Select two random objects
-        const nextObject = objectsToUpdate[i+1];
-    
-        // Create a random constraint type (e.g., distance constraint or hinge constraint)
-        // const constraintType = Math.random() < 0.5 ? 'distance' : 'hinge';
-        const constraintType ='distance';
-    
-        // Create the constraint based on the selected type
-        if (constraintType === 'distance') {
-            // Create a distance constraint
-            const distance = maxDistance; // Adjust the maximum distance as needed
-            const constraint = new CANNON.DistanceConstraint(object.body, nextObject.body, distance);
-            world.addConstraint(constraint);
-        } else if (constraintType === 'hinge') {
-            // Create a hinge constraint
-            const constraint = new CANNON.HingeConstraint(object.body, nextObject.body);
-            world.addConstraint(constraint);
-        }
+        var obecjtB = objectsToUpdate[i+1];
+        addConstraint(object, obecjtB, maxDistance)  
+    }
+    let n = 4
+    if(i+n <= objectsToUpdate.length - 1) {
+        obecjtB = objectsToUpdate[i+n];
+        addConstraint(object, obecjtB, maxDistance) 
     }
 
   })
+
+addConstraint(objectsToUpdate[0], objectsToUpdate[objectsToUpdate.length - 1], 30)
 
 /**
  * Floor
@@ -275,6 +284,22 @@ renderer.setClearColor( 0x000000, 0 )
 // const axesHelper = new THREE.AxesHelper( 5 );
 // scene.add( axesHelper );
 
+/**
+ * Update Scene
+ */
+function clearScene() {
+    var to_remove = [];
+
+    scene.traverse ( function( child ) {
+        if ( child instanceof THREE.Mesh && !child.userData.keepMe === true ) {
+            to_remove.push( child );
+         }
+    } );
+
+    for ( var i = 0; i < to_remove.length; i++ ) {
+        scene.remove( to_remove[i] );
+    }
+}
 
 /**
  * Animate
@@ -308,4 +333,4 @@ const tick = () =>
 }
 
 renderer.render(scene, camera)
-setTimeout(tick, 0)
+setTimeout(tick, 500)
