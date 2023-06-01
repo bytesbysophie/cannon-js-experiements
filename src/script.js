@@ -37,10 +37,10 @@ const scene = new THREE.Scene()
  */
 
 const inputData = [
-    {key: "A", value: 90},
-    {key: "B", value: 80},
-    {key: "C", value: 100},
-    {key: "D", value: 120}
+    {key: "A", value: 12},
+    {key: "B", value: 10},
+    {key: "C", value: 20},
+    {key: "D", value: 10}
 ]
 
 // Transform data
@@ -65,7 +65,7 @@ const color = new d3.scaleOrdinal()
 const world = new CANNON.World()
 world.broadphase = new CANNON.SAPBroadphase(world)
 world.allowSleep = true
-world.gravity.set(0, -12, 0)
+world.gravity.set(0, -5, 0)
 // world.gravity.set(0, - 9.82, 0)
 
 // Default material
@@ -123,7 +123,7 @@ const createObject = (d, width, height, depth, position) => {
     // const shape = new CANNON.Box(new CANNON.Vec3(width * 0.5, height * 0.5, depth * 0.5))
 
     const body = new CANNON.Body({
-        mass: 10,
+        mass: 1,
         linearDamping: 0.5, // Adjust the linear damping value to reduce bouncing
         position: new CANNON.Vec3(0, 3, 0),
         shape: shape,
@@ -138,6 +138,7 @@ const createObject = (d, width, height, depth, position) => {
     objectsToUpdate.push({ mesh, body })
 
 }
+
 const positionFactor = 10
 data.forEach((d, i) => createObject(d, 1, 1, 1, 
     { 
@@ -147,6 +148,36 @@ data.forEach((d, i) => createObject(d, 1, 1, 1,
      }))
 scene.add(dataMeshGroup)
 
+
+/**
+ * Constraints
+ */
+const maxDistance = 1
+// Create random constraints
+objectsToUpdate.forEach((object, i) => {
+
+    if(i !== objectsToUpdate.length - 1) {
+        // Select two random objects
+        const nextObject = objectsToUpdate[i+1];
+    
+        // Create a random constraint type (e.g., distance constraint or hinge constraint)
+        // const constraintType = Math.random() < 0.5 ? 'distance' : 'hinge';
+        const constraintType ='distance';
+    
+        // Create the constraint based on the selected type
+        if (constraintType === 'distance') {
+            // Create a distance constraint
+            const distance = maxDistance; // Adjust the maximum distance as needed
+            const constraint = new CANNON.DistanceConstraint(object.body, nextObject.body, distance);
+            world.addConstraint(constraint);
+        } else if (constraintType === 'hinge') {
+            // Create a hinge constraint
+            const constraint = new CANNON.HingeConstraint(object.body, nextObject.body);
+            world.addConstraint(constraint);
+        }
+    }
+
+  })
 
 /**
  * Floor
@@ -212,18 +243,17 @@ window.addEventListener('resize', () =>
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 500)
 
-// Controls
-// const controls = new OrbitControls(camera, canvas)
-// controls.enableDamping = true
-
-
-camera.position.z = 5
-camera.position.x = 5
-camera.position.y = 60
-camera.rotation.x = 90 * Math.PI / -180
+camera.position.z = 30
+camera.position.x = 10
+camera.position.y = 40
+// camera.rotation.x = 90 * Math.PI / -180
 // camera.lookAt(scene.position)
 scene.add(camera)
 
+// Controls
+const controls = new OrbitControls(camera, canvas)
+controls.enableDamping = true
+controls.update()
 
 /**
  * Renderer
@@ -244,6 +274,7 @@ renderer.setClearColor( 0x000000, 0 )
 
 // const axesHelper = new THREE.AxesHelper( 5 );
 // scene.add( axesHelper );
+
 
 /**
  * Animate
@@ -267,7 +298,7 @@ const tick = () =>
     }
 
     // Update controls
-    // controls.update()
+    controls.update()
 
     // Render
     renderer.render(scene, camera)
@@ -277,4 +308,4 @@ const tick = () =>
 }
 
 renderer.render(scene, camera)
-setTimeout(tick, 500)
+setTimeout(tick, 0)
