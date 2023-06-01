@@ -12,6 +12,7 @@ import * as CANNON from 'cannon-es'
 const config = {
     color1: '#232d34', // #00f5d4 #e9eaf2 #5db5f9 #232d34 #9b5de5
     wireframe: false
+
 }
 
 // Debug
@@ -64,7 +65,7 @@ const color = new d3.scaleOrdinal()
 const world = new CANNON.World()
 world.broadphase = new CANNON.SAPBroadphase(world)
 world.allowSleep = true
-world.gravity.set(0, -4, 0)
+world.gravity.set(0, -12, 0)
 // world.gravity.set(0, - 9.82, 0)
 
 // Default material
@@ -99,7 +100,7 @@ const invlerp = (x, y, a) => clamp((a - x) / (y - x))
 
 const objectsToUpdate = []
 
-const geometry = new THREE.BoxGeometry(1, 1, 1, 2, 2, 2)
+const geometry = new THREE.IcosahedronGeometry(1)
 const material = new THREE.MeshStandardMaterial({wireframe: config.wireframe})
 
 const dataMeshGroup = new THREE.Group();
@@ -118,15 +119,18 @@ const createObject = (d, width, height, depth, position) => {
     dataMeshGroup.add(mesh)
 
     // Cannon.js body
-    const shape = new CANNON.Box(new CANNON.Vec3(width * 0.5, height * 0.5, depth * 0.5))
+    const shape = new CANNON.Sphere(1)
+    // const shape = new CANNON.Box(new CANNON.Vec3(width * 0.5, height * 0.5, depth * 0.5))
 
     const body = new CANNON.Body({
-        mass: 1,
+        mass: 10,
+        linearDamping: 0.5, // Adjust the linear damping value to reduce bouncing
         position: new CANNON.Vec3(0, 3, 0),
         shape: shape,
         material: defaultMaterial
     })
     body.position.copy(position)
+
     // body.addEventListener('collide', playHitSound)
     world.addBody(body)
 
@@ -134,14 +138,15 @@ const createObject = (d, width, height, depth, position) => {
     objectsToUpdate.push({ mesh, body })
 
 }
-const positionFactor = 5
+const positionFactor = 10
 data.forEach((d, i) => createObject(d, 1, 1, 1, 
     { 
         x: Math.random() * positionFactor, 
-        y: Math.random() * positionFactor * 10, 
+        y: Math.random() * positionFactor + 10, 
         z: Math.random() * positionFactor
      }))
 scene.add(dataMeshGroup)
+
 
 /**
  * Floor
@@ -203,17 +208,22 @@ window.addEventListener('resize', () =>
  * Camera
  */
 
+
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 500)
-camera.position.x = 10
-camera.position.y = 10
-camera.position.z = 60
+
+// Controls
+// const controls = new OrbitControls(camera, canvas)
+// controls.enableDamping = true
+
+
+camera.position.z = 5
+camera.position.x = 5
+camera.position.y = 60
+camera.rotation.x = 90 * Math.PI / -180
+// camera.lookAt(scene.position)
 scene.add(camera)
 
-scene.position.y = -15
-// Controls
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
 
 /**
  * Renderer
@@ -229,11 +239,17 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.setClearColor( 0x000000, 0 )
 
 /**
+ * Axes Helper
+ */
+
+// const axesHelper = new THREE.AxesHelper( 5 );
+// scene.add( axesHelper );
+
+/**
  * Animate
  */
 const clock = new THREE.Clock()
 let oldElapsedTime = 0
-console.log(world.gravity)
 
 const tick = () =>
 {
@@ -243,9 +259,6 @@ const tick = () =>
 
     // Update physics
     world.step(1 / 60, deltaTime, 3)
-    // while(world.gravity.y > -9) {
-    //     world.gravity.set(0, world.gravity.y - 1 , 0)
-    // }
 
     for(const object of objectsToUpdate)
     {
@@ -254,7 +267,7 @@ const tick = () =>
     }
 
     // Update controls
-    controls.update()
+    // controls.update()
 
     // Render
     renderer.render(scene, camera)
@@ -264,4 +277,4 @@ const tick = () =>
 }
 
 renderer.render(scene, camera)
-setTimeout(tick, 1000)
+setTimeout(tick, 500)
