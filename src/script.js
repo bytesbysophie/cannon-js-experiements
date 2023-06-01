@@ -12,20 +12,24 @@ import * as CANNON from 'cannon-es'
 const config = {
     color1: '#232d34', // #00f5d4 #e9eaf2 #5db5f9 #232d34 #9b5de5
     wireframe: false,
-    constraintType: 'distance' // 'distance' 'hinge'
+    constraintType: 'distance', // 'distance' 'hinge' 'hinge'
+    updateScene,
+    positionFactor: 10,
+    objectDistance: 1,
+    endPointDistance: 30
 
 }
 
 // Debug
-// const gui = new dat.GUI()
-// gui
-//     .addColor(config, 'color1')
-//     .onChange(() =>
-//     {
-//         material.color.set(config.color1)
-//     })
-// gui.add(config, 'wireframe')
-// .onChange(() => dataMeshes.forEach(m => m.material.wireframe = config.wireframe))
+const gui = new dat.GUI()
+gui.add(config, 'wireframe')
+    .onChange(() => dataMeshes.forEach(m => m.material.wireframe = config.wireframe))
+// gui.add(config, 'positionFactor', 0, 30) // only applied at next scene update
+gui.add(config, 'objectDistance', 0, 20).onChange(() => {updateObjectConstraints()})
+gui.add(config, 'endPointDistance', 0, 100).onChange(() => {updateEndpointConstraint()})
+gui.add( config, 'constraintType' , ['distance', 'hinge', 'none']).onChange(() => {updateConstraints()})
+gui.add( config, 'updateScene' ); // Button
+
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
@@ -99,19 +103,19 @@ const clamp = (a, min = 0, max = 1) => Math.min(max, Math.max(min, a))
 const invlerp = (x, y, a) => clamp((a - x) / (y - x))
 // const scalar = invlerp(0, data.length, i)
 
-const objectsToUpdate = []
+let objectsToUpdate
+let dataMeshGroup 
+let dataMeshes
 
 const geometry = new THREE.IcosahedronGeometry(1)
-const material = new THREE.MeshStandardMaterial({wireframe: config.wireframe})
-
-const dataMeshGroup = new THREE.Group();
-const dataMeshes = []
+const material = new THREE.MeshStandardMaterial()
 
 const createObject = (d, width, height, depth, position) => {
 
     // Three.js mesh
     const mesh = new THREE.Mesh(geometry, material.clone())
     mesh.material.color = new THREE.Color(color(d))
+    mesh.material.wireframe = config.wireframe
     mesh.castShadow = true
     mesh.scale.set(width, height, depth)
     mesh.position.copy(position)
@@ -140,53 +144,102 @@ const createObject = (d, width, height, depth, position) => {
 
 }
 
-const positionFactor = 10
-data.forEach((d, i) => createObject(d, 1, 1, 1, 
-    { 
-        x: Math.random() * positionFactor, 
-        y: Math.random() * positionFactor + 10, 
-        z: Math.random() * positionFactor
-     }))
-scene.add(dataMeshGroup)
 
+const addObjects = () => {
+    objectsToUpdate = []
+    dataMeshGroup = new THREE.Group();
+    dataMeshes = []
+
+    data.forEach((d, i) => createObject(d, 1, 1, 1, 
+        { 
+            x: Math.random() * config.positionFactor, 
+            y: Math.random() * config.positionFactor + 10, 
+            z: Math.random() * config.positionFactor
+         }))
+    scene.add(dataMeshGroup)
+}
+
+addObjects()
 
 /**
  * Constraints
  */
-const maxDistance = 2
+let objectsConstraints
+let endpointConstraint
 
-const addConstraint = (objectA, obecjtB, maxDistance) => {
+const constrainTwoObjects = (objectA, obecjtB, maxDistance) => {
     // Create the constraint based on the selected type
+    let constraint
     if (config.constraintType === 'distance') {
         // Create a distance constraint
         // const distance = maxDistance * Math.random(); // Adjust the maximum distance as needed
         const distance = maxDistance; // Adjust the maximum distance as needed
-        const constraint = new CANNON.DistanceConstraint(objectA.body, obecjtB.body, distance);
+        constraint = new CANNON.DistanceConstraint(objectA.body, obecjtB.body, distance);
         world.addConstraint(constraint);
     } else if (config.constraintType === 'hinge') {
         // Create a hinge constraint
-        const constraint = new CANNON.HingeConstraint(objectA.body, obecjtB.body);
+        constraint = new CANNON.HingeConstraint(objectA.body, obecjtB.body);
         world.addConstraint(constraint);
     }
+    return constraint
 }
 
-// Create random constraints
-objectsToUpdate.forEach((object, i) => {
+const addConstraint = () => {
+    // Add consraints for the first an last object
+    addEndpointConstraint()
+    addObjectConstraints()
+}
 
-    if(i !== objectsToUpdate.length - 1) {
-        // Select two random objects
-        var obecjtB = objectsToUpdate[i+1];
-        addConstraint(object, obecjtB, maxDistance)  
-    }
-    let n = 4
-    if(i+n <= objectsToUpdate.length - 1) {
-        obecjtB = objectsToUpdate[i+n];
-        addConstraint(object, obecjtB, maxDistance) 
-    }
+const addEndpointConstraint = () => {
+    endpointConstraint = constrainTwoObjects(objectsToUpdate[0], objectsToUpdate[objectsToUpdate.length - 1], config.endPointDistance)
+}
 
-  })
+const removeEndpointConstraint = () => {
+    world.removeConstraint(endpointConstraint)
+}
 
-addConstraint(objectsToUpdate[0], objectsToUpdate[objectsToUpdate.length - 1], 30)
+const updateEndpointConstraint = () => {
+    removeEndpointConstraint()
+    addEndpointConstraint()
+}
+
+const addObjectConstraints = () => {
+    objectsConstraints = []
+
+    // Add consraints for all objects
+    objectsToUpdate.forEach((object, i) => {
+
+        if(i !== objectsToUpdate.length - 1) {
+            // Select two random objects
+            var obecjtB = objectsToUpdate[i+1];
+            objectsConstraints.push(constrainTwoObjects(object, obecjtB, config.objectDistance)) 
+        }
+        let n = 4
+        if(i+n <= objectsToUpdate.length - 1) {
+            obecjtB = objectsToUpdate[i+n];
+            objectsConstraints.push(constrainTwoObjects(object, obecjtB, config.objectDistance)) 
+        }
+
+    })
+}
+
+const removeObjectConstraints = () => {
+    objectsConstraints.forEach(c => {
+        world.removeConstraint(c)
+    })
+}
+
+const updateObjectConstraints = () => {
+    removeObjectConstraints()
+    addObjectConstraints()
+}
+
+const updateConstraints = () => {
+    updateEndpointConstraint()
+    updateObjectConstraints()
+}
+
+addConstraint()
 
 /**
  * Floor
@@ -287,17 +340,12 @@ renderer.setClearColor( 0x000000, 0 )
 /**
  * Update Scene
  */
-function clearScene() {
-    var to_remove = [];
 
-    scene.traverse ( function( child ) {
-        if ( child instanceof THREE.Mesh && !child.userData.keepMe === true ) {
-            to_remove.push( child );
-         }
-    } );
-
-    for ( var i = 0; i < to_remove.length; i++ ) {
-        scene.remove( to_remove[i] );
+function updateScene() {
+    scene.remove( dataMeshGroup);
+    addObjects()
+    if(config.constraintType !== 'none') {
+        addConstraint()
     }
 }
 
