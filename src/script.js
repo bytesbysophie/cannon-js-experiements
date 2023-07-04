@@ -10,14 +10,15 @@ import * as CANNON from 'cannon-es'
 
 // Parameters
 const config = {
-    color1: '#232d34', // #00f5d4 #e9eaf2 #5db5f9 #232d34 #9b5de5
+    color1: '#8C73EA', // #00f5d4 #e9eaf2 #5db5f9 #232d34 #9b5de5
+    color2: '#9B5DE5', // #00f5d4 #e9eaf2 #5db5f9 #232d34 #9b5de5
     wireframe: false,
-    constraintType: 'distance', // 'distance' 'hinge' 'hinge'
+    constraintType: 'none', // 'distance' 'hinge' 'hinge'
     updateScene,
     positionFactor: 10,
-    objectDistance: 1,
-    endPointDistance: 30,
-    objectDensity: 5
+    objectDistance: 5,
+    endPointDistance: 4,
+    objectDensity: 4
 
 }
 
@@ -44,20 +45,34 @@ const scene = new THREE.Scene()
  */
 
 const inputData = [
-    {key: "A", value: 22},
-    {key: "B", value: 30},
-    {key: "C", value: 20},
-    {key: "D", value: 40}
+    {key: "A", value: 54},
+    {key: "B", value: 80},
+    {key: "C", value: 55},
+    {key: "D", value: 43}
 ]
 
 // Transform data
-const data = []
+let data = []
 inputData.forEach(d => {
     console.log(d.value)
     for(let i = 0; i < d.value; i++){
         data.push(d.key)
     }
 })
+data = d3.shuffle(data)
+
+
+/**
+ * Materials
+ */
+const textureLoader = new THREE.TextureLoader()
+
+const matcapTextures = [
+    textureLoader.load('textures/a.png'),
+    textureLoader.load('textures/b.png'),
+    textureLoader.load('textures/c.png'),
+    textureLoader.load('textures/d.png')
+]
 
 /**
  * Scales
@@ -65,6 +80,10 @@ inputData.forEach(d => {
 const color = new d3.scaleOrdinal()
     .domain([new Set(data)])
     .range(["#9b5de5","#e9eaf2","#5db5f9","#00f5d4"])
+
+const matcap = new d3.scaleOrdinal()
+    .domain([new Set(data)])
+    .range(matcapTextures)
 
 /**
  * Physics
@@ -95,6 +114,17 @@ floorBody.addShape(floorShape)
 floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(- 1, 0, 0), Math.PI * 0.5)  // rotate because the plane is also rotated
 world.addBody(floorBody)
 
+
+const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(200, 200),
+    new THREE.MeshStandardMaterial({color: config.color2})
+)
+plane.rotation.x = - Math.PI * 0.5
+plane.receiveShadow = true
+scene.add(plane)
+
+
+
 /**
  * Objects
  */
@@ -110,13 +140,15 @@ let dataMeshGroup
 let dataMeshes
 
 const geometry = new THREE.IcosahedronGeometry(1)
-const material = new THREE.MeshStandardMaterial()
+const material = new THREE.MeshMatcapMaterial()
+// material.roughness = 0.1
+// material.metalness = 0.5
 
 const createObject = (d, width, height, depth, position) => {
 
     // Three.js mesh
     const mesh = new THREE.Mesh(geometry, material.clone())
-    mesh.material.color = new THREE.Color(color(d))
+    mesh.material.matcap = matcap(d)
     mesh.material.wireframe = config.wireframe
     mesh.castShadow = true
     mesh.scale.set(width, height, depth)
@@ -244,19 +276,10 @@ const updateConstraints = () => {
 addConstraint()
 
 /**
- * Floor
+ * Fog
  */
-// const floor = new THREE.Mesh(
-//     new THREE.PlaneGeometry(100, 100),
-//     new THREE.MeshStandardMaterial({
-//         color: config.color1,
-//         metalness: 0.3,
-//         roughness: 0.4,
-//     })
-// )
-// floor.receiveShadow = true
-// floor.rotation.x = - Math.PI * 0.5
-// scene.add(floor)
+const fog = new THREE.Fog(config.color2, 30, 100)
+scene.fog = fog
 
 /**
  * Lights
@@ -267,13 +290,18 @@ scene.add(ambientLight)
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
 directionalLight.castShadow = true
 directionalLight.shadow.mapSize.set(1024, 1024)
-directionalLight.shadow.camera.far = 15
-directionalLight.shadow.camera.left = - 7
-directionalLight.shadow.camera.top = 7
-directionalLight.shadow.camera.right = 7
-directionalLight.shadow.camera.bottom = - 7
-directionalLight.position.set(5, 5, 5)
+directionalLight.shadow.camera.far = 200
+directionalLight.shadow.camera.near = 1
+directionalLight.shadow.camera.left = - 100
+directionalLight.shadow.camera.top = 100
+directionalLight.shadow.camera.right = 100
+directionalLight.shadow.camera.bottom = - 100
+directionalLight.position.set(10, 10, 10)
+
 scene.add(directionalLight)
+
+// scene.add( new THREE.DirectionalLightHelper( directionalLight ))
+// scene.add( new THREE.CameraHelper( directionalLight.shadow.camera ) )
 
 /**
  * Sizes
@@ -307,12 +335,15 @@ window.addEventListener('resize', () =>
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 500)
 
-camera.position.z = 30
-camera.position.x = 10
-camera.position.y = 40
-// camera.rotation.x = 90 * Math.PI / -180
+camera.position.z = 40
+camera.position.x = 0
+camera.position.y = 5
+// scene.rotation.y = -90 * Math.PI/180
 // camera.lookAt(scene.position)
 scene.add(camera)
+camera.lookAt( scene.position )
+
+// scene.add( new THREE.CameraHelper( camera ) )
 
 // Controls
 const controls = new OrbitControls(camera, canvas)
@@ -330,7 +361,7 @@ renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-renderer.setClearColor( 0x000000, 0 )
+renderer.setClearColor( config.color2 )
 
 /**
  * Axes Helper
